@@ -15,3 +15,8 @@ This one introduces the concept of updating the GOT to redirect execution to do 
 
 ### [Level 5](./level5)
 This requires multiple writes to achive the desired result. You need to utilize all the knowledge gained on levels 1-4 to get the flag.
+
+#### Required Reading:
+[https://www.exploit-db.com/docs/28476.pdf](https://www.exploit-db.com/docs/28476.pdf)
+[https://crypto.stanford.edu/cs155old/cs155-spring08/papers/formatstring-1.2.pdf](https://crypto.stanford.edu/cs155old/cs155-spring08/papers/formatstring-1.2.pdf)
+
