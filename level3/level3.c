@@ -12,6 +12,9 @@ int main(int argc, char** argv)
 {
     char buffer[BUF_LEN];
 
+    setvbuf(stdin, 0, 2, 0);
+    setvbuf(stdout, 0, 2, 0);
+
     printf("Give me something to say!\n");
     fflush(stdout);
     fgets(buffer, BUF_LEN, stdin);
