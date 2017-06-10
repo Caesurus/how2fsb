@@ -1,6 +1,9 @@
 # how2fsb
 Examples of FSB exploitable binaries that can be used to practice FSB. All these binaries are 32bit. Compiled on Ubuntu 16.04
 
+### [Playground](./playground)
+Please check this out to get a rundown of all the different things you can do with FSB (step by step guide). There is an interactive script that will let you attach to the playground application and peek/poke at memory and step through the assembly.
+
 ### [Level 1](./level1)
 This level was taken directly from the PicoCTF2017 challenge "Ive Got A Secret". It's a great intro into FSB. I downloaded the source and recompiled it.
 
