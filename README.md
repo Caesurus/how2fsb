@@ -1,5 +1,15 @@
 # how2fsb
-Examples of FSB exploitable binaries that can be used to practice FSB. All these binaries are 32bit. Compiled on Ubuntu 16.04
+Format String Bugs (FSB) and how to exploit them.
+A _Format String Bug_ is when an application passes user input directly to `printf()`. EG:
+```
+    fgets(buffer, BUF_LEN, stdin);
+    printf(buffer);
+```
+This allows the user to do all sorts of fun stuff. 
+
+This repo contains examples of _Format String Bug_ exploitable binaries that can be used to learn and practice. All these binaries are 32bit. Compiled on Ubuntu 16.04
+
+Suggested Order: Complete the tutorial in the playground section. This will give an indepth, hands on guide on how to exploit _Format String Bugs_. After that, try to solve levels 1-5.
 
 ### [Playground](./playground)
 Please check this out to get a rundown of all the different things you can do with FSB (step by step guide). There is an interactive script that will let you attach to the playground application and peek/poke at memory and step through the assembly.
