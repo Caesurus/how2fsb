@@ -1,5 +1,7 @@
 # how2fsb
 Format String Bugs (FSB) and tutorials on how to exploit them. 
+Now updated to use python3! And tested on Ubuntu 20.04.
+
 A _Format String Bug_ is when an application passes user input directly to `printf()`. EG:
 ```
     fgets(buffer, BUF_LEN, stdin);
@@ -9,7 +11,7 @@ This allows the user to do all sorts of fun stuff.
 
 This repo contains examples of _Format String Bug_ exploitable binaries that can be used to learn and practice. All these binaries are 32bit. Compiled on Ubuntu 16.04.
 
-Suggested Order: Complete the tutorial in the playground section. This will give an indepth, hands on guide on how to exploit _Format String Bugs_. After that, try to solve levels 1-5.
+Suggested Order: Complete the tutorial in the playground section. This will give an in depth, hands-on guide on how to exploit _Format String Bugs_. After that, try to solve levels 1-5.
 
 ### [Playground](./playground)
 Please check this out to get a rundown of all the different things you can do with FSB (step by step guide). There is an interactive script that will let you attach to the playground application and peek/poke at memory and step through the assembly.

